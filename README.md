@@ -22,8 +22,19 @@ was going a bit too far for me.
 
 ## Usage
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.monkeyprojects/shadow-junit-xml.svg)](https://clojars.org/com.monkeyprojects/shadow-junit-xml)
+[![CircleCI](https://circleci.com/gh/monkey-projects/shadow-junit-xml.svg?style=svg)](https://app.circleci.com/pipelines/github/monkey-projects/shadow-junit-xml)
+
 It's quite simple.  Actually, this library [uses it too](shadow-cljs.edn).
-I assume you've already [set up your Shadow-cljs project](https://shadow-cljs.github.io/docs/UsersGuide.html#_usage_.
+I assume you've already [set up your Shadow-cljs project](https://shadow-cljs.github.io/docs/UsersGuide.html#_usage_).
+Then add the library as a dependency in your `shadow-cljs.edn`:
+```clojure
+...
+:dependencies [...
+               [com.monkeyprojects/shadow-junit-xml "<RELEASE>"]]
+...
+```
+
 Next, add a build that targets `node-test` and use this library's test
 runner as your `main`, like this:
 
