@@ -13,36 +13,10 @@ executors:
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
-
-orbs:
-  gcp: circleci/gcp-cli@3.1.0
         
 jobs:
 
-  test-backend:
-    executor: clj
-    steps:
-      - checkout
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "deps.edn" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-      - run:
-          name: Dependencies
-          command: clojure -X:test:junit:deps prep
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: v1-dependencies-{{ checksum "deps.edn" }}
-      - run:
-          name: Unit tests
-          command: clojure -X:test:junit
-      - store_test_results:
-          path: junit.xml
-
-  test-frontend:
+  test:
     executor: cljs
     steps:
       - checkout
@@ -75,41 +49,8 @@ jobs:
           command: node target/js/node-tests.js 1>junit-cljs.xml
       - store_test_results:
           path: junit-cljs.xml
-  
-  compile-frontend:
-    executor: cljs
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - npm-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - npm-dependencies-
-      - run:
-          name: Npm dependencies
-          command: npm install
-      - save_cache:
-          paths:
-            - node_modules/
-          key: npm-dependencies-{{ checksum "package.json" }}
-      - restore_cache:
-          keys:
-            - shadow-dependencies-{{ checksum "shadow-cljs.edn" }}
-            # fallback to using the latest cache if no exact match is found
-            - shadow-dependencies-
-      - run:
-          name: Compile app code
-          command: npx shadow-cljs release app
-      - save_cache:
-          paths:
-            - .shadow-cljs/
-          key: shadow-dependencies-{{ checksum "shadow-cljs.edn" }}
-      - persist_to_workspace:
-          root: '.'
-          paths:
-            - 'resources/public/js/*.js'
 
-  uberjar:
+  deploy:
     executor: clj
     steps:
       - checkout
@@ -121,60 +62,24 @@ jobs:
             - v1-dependencies-
       - run:
           name: Dependencies
-          command: clojure -X:jar:deps prep
+          command: clojure -X:deps prep
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "deps.edn" }}
       - run:
-          name: Build uberjar
-          command: clojure -X:jar:uber
-      - store_artifacts:
-          path: target/blog-fn.jar
-      - persist_to_workspace:
-          root: '.'
-          paths:
-            - 'target/*.jar'
-
-  deploy-gcp:
-    executor: gcp/default
-    steps:
-      - checkout
-      - gcp/setup:
-          version: 423.0.0
-      - attach_workspace:
-          at: '.'
+          name: Build Jar
+          command: clojure -X:jar
       - run:
-          name: Deploy AppEngine version
-          command: gcloud app deploy app.yaml -v <<pipeline.number>>
-          
+          name: Deploy to Clojars
+          command: clojure -X:jar:deploy
+
 workflows:
   version: 2
   build:
     jobs:
-      - test-backend
-      - test-frontend
-      - compile-frontend:
-          filters:
-            # Also run for release tags
-            tags:
-              only: /^v.*/
-      - uberjar:
-          filters:
-            # Only deploy on release tags
-            tags:
-              only: /^v.*/
-            branches:
-              only: main
-      - deploy-gcp:
+      - test
+      - deploy:
+          context: clojars
           requires:
-            - test-backend
-            - compile-frontend
-            - uberjar
-          filters:
-            # Only deploy on release tags
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-          context: gcp-blog
+            - test
