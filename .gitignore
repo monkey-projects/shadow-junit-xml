@@ -2,3 +2,4 @@
 .shadow-cljs/
 node_modules/
 target/
+junit.xml

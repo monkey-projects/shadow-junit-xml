@@ -10,7 +10,7 @@
 (defmethod update-report :default [ctx]
   ;; Noop
   (printerr "Unsupported test tag type:" (:type ctx))
-  (printerr "All:" ctx)
+  (printerr "All properties:" ctx)
   ctx)
 
 (defn- add-out [ctx msg]

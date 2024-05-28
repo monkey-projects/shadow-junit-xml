@@ -1,17 +1,22 @@
 {:paths ["src"]
+ :deps {thheller/shadow-cljs {:mvn/version "2.24.1"}}
 
  :aliases
- {:jar
+ {:test
+  {:extra-deps {com.monkeyprojects/shadow-junit-xml {:mvn/version "0.1.0-SNAPSHOT"}}
+   :extra-paths ["test"]}
+
+  :jar
   {:extra-paths ["build"]
-   :extra-deps {com.monkeyprojects/build {:mvn/version "0.1.0-SNAPSHOT"}}
+   :extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}}
    :exec-fn monkey.build/jar
    :exec-args {:jar "target/shadow-junit.jar"
-               :version "0.1.0-SNAPSHOT"
+               :version-env "LIB_VERSION"
                :lib com.monkeyprojects/shadow-junit-xml
                :scm {:url "https://github.com/monkey-projects/shadow-junit-xml"}}}
 
   :install
   {:exec-fn monkey.build/jar+install}
 
-  :deploy
+  :publish
   {:exec-fn monkey.build/deploy}}}
