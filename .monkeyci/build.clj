@@ -1,6 +1,7 @@
 (ns shadow-junit-xml.build
   (:require [monkey.ci.build.core :as bc]
-            [monkey.ci.plugin.clj :as clj]))
+            [monkey.ci.plugin.clj :as clj]
+            [monkey.ci.ext.junit]))
 
 (def test
   (bc/container-job
@@ -20,7 +21,11 @@
     
     :save-artifacts
     [{:id "test-results"
-      :path "junit.xml"}]}))
+      :path "junit.xml"}]
+
+    :junit
+    {:artifact-id "test-results"
+     :path "junit.xml"}}))
 
 (def deploy
   (clj/deps-publish {}))
