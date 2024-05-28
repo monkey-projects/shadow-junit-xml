@@ -23,7 +23,6 @@ was going a bit too far for me.
 ## Usage
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.monkeyprojects/shadow-junit-xml.svg)](https://clojars.org/com.monkeyprojects/shadow-junit-xml)
-[![CircleCI](https://circleci.com/gh/monkey-projects/shadow-junit-xml.svg?style=svg)](https://app.circleci.com/pipelines/github/monkey-projects/shadow-junit-xml)
 
 It's quite simple.  Actually, this library [uses it too](shadow-cljs.edn).
 I assume you've already [set up your Shadow-cljs project](https://shadow-cljs.github.io/docs/UsersGuide.html#_usage_).
@@ -64,3 +63,9 @@ $ node target/js/node-tests.js 1>junit.xml
 ```
 In the above example, `junit.xml` should now contain the test results in JUnit
 format, which you can then pass on to your CI/CD tool!
+
+## LICENSE
+
+Copyright (c) 2023-2024 by [Monkey Projects BV](https://www.monkey-projects.be).
+
+[MIT License](LICENSE)
