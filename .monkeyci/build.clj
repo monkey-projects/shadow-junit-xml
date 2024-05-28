@@ -10,7 +10,7 @@
     ["npm install"
      ;; Run using clojure so we can specify the local mvn repo path
      "clojure -Sdeps '{:mvn/local-repo \".m2\"}' -M:test -m shadow.cljs.devtools.cli release test-ci"
-     "node target/js/node-tests/js 1>junit.xml"]
+     "node target/js/node-tests.js 1>junit.xml"]
     
     :caches
     [{:id "mvn-repo"
