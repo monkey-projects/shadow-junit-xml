@@ -28,10 +28,15 @@ It's quite simple.  Actually, this library [uses it too](shadow-cljs.edn).
 I assume you've already [set up your Shadow-cljs project](https://shadow-cljs.github.io/docs/UsersGuide.html#_usage_).
 Then add the library as a dependency in your `shadow-cljs.edn`:
 ```clojure
+;; Leiningen
 ...
 :dependencies [...
                [com.monkeyprojects/shadow-junit-xml "<RELEASE>"]]
 ...
+```
+Or, with `deps.edn`:
+```clojure
+{com.monkeyprojects/shadow-junit-xml {:mvn/version "<RELEASE>"}}
 ```
 
 Next, add a build that targets `node-test` and use this library's test

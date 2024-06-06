@@ -6,6 +6,11 @@
   (binding [*print-fn* *print-err-fn*]
     (apply println msg args)))
 
+(defn ts
+  "Current timestamp, in epoch millis"
+  []
+  (.getTime (js/Date.)))
+
 (defmulti update-report :type)
 
 (defmethod update-report :default [ctx]
@@ -41,11 +46,12 @@
         format-failure (fn [{:keys [message details]}]
                          {:failure {:_attr {:message message}
                                     :_cdata details}})
-        format-testcase (fn [{:keys [name failures]}]
+        format-testcase (fn [{:keys [name time failures]}]
                           {:testcase (->> failures
                                           (map format-failure)
-                                          (into [{:_attr {:name name
-                                                          :classname ns}}]))})]
+                                          (into [{:_attr (cond-> {:name name
+                                                                  :classname ns}
+                                                           time (assoc :time time))}]))})]
     (-> ctx
         (add-out {:testsuite (->> test-cases
                                   (map format-testcase)
@@ -53,16 +59,22 @@
                                                   :package ns
                                                   :tests (+ pass fail error)
                                                   :failures fail
-                                                  :errors error}}]))})
+                                                  :errors error
+                                                  :time (->> test-cases
+                                                             (map :time)
+                                                             (remove nil?)
+                                                             (reduce + 0))}}]))})
         (update-state dissoc :ns :test-cases))))
 
 (defmethod update-report :begin-test-var [{:keys [var] :as ctx}]
-  (assoc-in ctx [::state :var] var))
+  ;; Register current test var and start time in state
+  (update ctx ::state assoc :var var :time (ts)))
 
-(defmethod update-report :end-test-var [{:keys [var] :as ctx}]
+(defmethod update-report :end-test-var [{:keys [var time] :as ctx}]
   (-> ctx
       (update-state (fn [s]
-                      (update s :test-cases conj (-> {:name (name (:name (meta var)))}
+                      (update s :test-cases conj (-> {:name (name (:name (meta var)))
+                                                      :time (- (ts) time)}
                                                      (merge (select-keys s [:pass :fail :error :failures]))))))
       (update-state dissoc :var :pass :fail :error :failures)))
 

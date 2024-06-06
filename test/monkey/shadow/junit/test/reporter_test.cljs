@@ -42,7 +42,8 @@
                                         {:name "second"
                                          :pass 2
                                          :error 0
-                                         :fail 1}
+                                         :fail 1
+                                         :time 0.2}
                                         {:name "third"
                                          :pass 1
                                          :error 2
@@ -57,13 +58,24 @@
                         :package "test.ns"
                         :errors 2
                         :failures 3
-                        :tests 10}}
+                        :tests 10
+                        :time 0.2}}
                (first (:testsuite out)))))
 
       (testing "adds `<testcase>` without failures"
         (is (= {:testcase [{:_attr {:name "first"
                                     :classname "test.ns"}}]}
                (-> out :testsuite second))))
+
+      (testing "adds time when specified"
+        (is (= 0.2
+               (-> out
+                   :testsuite
+                   (nth 2)
+                   :testcase
+                   first
+                   :_attr
+                   :time))))
 
       (testing "adds `<failure>` tags"
         (is (= {:testcase [{:_attr
@@ -84,7 +96,10 @@
     (let [r (sut/update-report {:type :begin-test-var
                                 :var "test var"})]
       (testing "sets var in state"
-        (is (= "test var" (-> r ::sut/state :var))))))
+        (is (= "test var" (-> r ::sut/state :var))))
+
+      (testing "sets current time"
+        (is (number? (-> r ::sut/state :time))))))
 
   (testing "end-test-var"
     (let [r (sut/update-report {:type :end-test-var
