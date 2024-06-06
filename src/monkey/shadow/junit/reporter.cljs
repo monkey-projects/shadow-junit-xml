@@ -1,5 +1,6 @@
 (ns monkey.shadow.junit.reporter
-  (:require [clojure.string :as cs]))
+  (:require [clojure.string :as cs]
+            ["xml" :as xml]))
 
 (defn printerr [msg & args]
   (binding [*print-fn* *print-err-fn*]
@@ -20,6 +21,7 @@
   (apply update ctx ::state f args))
 
 (defmethod update-report :begin-run-tests [ctx]
+  ;; Write xml declaration manually because we'll add test suites as we go along
   (add-out ctx "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<testsuites>"))
 
 (defmethod update-report :end-run-tests [ctx]
@@ -36,24 +38,22 @@
                              0
                              test-cases))
         [pass fail error] (mapv calc-total [:pass :fail :error])
-        header (str "  <testsuite package=\"" ns "\" "
-                    "tests=\"" (+ pass fail error) "\" "
-                    "failures=\"" fail "\" "
-                    "errors=\"" error "\">")
         format-failure (fn [{:keys [message details]}]
-                         ;; TODO Escaping
-                         (str "      <failure message=\"" message "\">"
-                              "<![CDATA[" details "]]>"))
+                         {:failure {:_attr {:message message}
+                                    :_cdata details}})
         format-testcase (fn [{:keys [name failures]}]
-                          (cs/join "\n"
-                                   (concat
-                                    [(str "    <testcase name=\"" name "\" classname=\"" ns "\">")]
-                                    (map format-failure failures)
-                                    ["    </testcase>"])))]
+                          {:testcase (->> failures
+                                          (map format-failure)
+                                          (into [{:_attr {:name name
+                                                          :classname ns}}]))})]
     (-> ctx
-        (add-out (cs/join "\n" (concat [header]
-                                       (map format-testcase test-cases)
-                                       ["  </testsuite>"])))
+        (add-out {:testsuite (->> test-cases
+                                  (map format-testcase)
+                                  (into [{:_attr {:name ns
+                                                  :package ns
+                                                  :tests (+ pass fail error)
+                                                  :failures fail
+                                                  :errors error}}]))})
         (update-state dissoc :ns :test-cases))))
 
 (defmethod update-report :begin-test-var [{:keys [var] :as ctx}]
@@ -97,10 +97,16 @@
   (printerr "Test executed:" test "total," pass "passed," fail "failed," error "error(s)")
   ctx)
 
-(defn reporter [state {:keys [type] :as ctx}]
+(def ->xml (comp xml clj->js))
+
+(defn reporter
+  "This is invoked by the runner periodically whenever a test event is dispatched.
+   To avoid running out of memory on large test suites, we print the xml result after
+   each test has been run."
+  [state {:keys [type] :as ctx}]
   ;; Not for parallel execution, but that's ok in node
   (let [{:keys [::out] new-state ::state :as new-ctx} (update-report (assoc ctx ::state @state))]
     (reset! state new-state)
     ;; Print output, if any
     (when out
-      (println out))))
+      (println (if (string? out) out (->xml out))))))

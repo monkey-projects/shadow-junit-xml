@@ -1,7 +1,8 @@
 (ns monkey.shadow.junit.test.reporter-test
   (:require [cljs.test :refer-macros [deftest is testing]]
             [clojure.string :as cs]
-            [monkey.shadow.junit.reporter :as sut]))
+            [monkey.shadow.junit.reporter :as sut]
+            ["xml" :as xml]))
 
 (deftest update-report
   (testing "begin-run-tests"
@@ -14,9 +15,13 @@
         (is (= :test-state (::sut/state r))))))
 
   (testing "end-run-tests"
-    (let [r (sut/update-report {:type :end-run-tests})]
+    (let [r (sut/update-report {:type :end-run-tests
+                                ::sut/state :test-state})]
       (testing "writes `<testsuites>` end tag"
-        (is (cs/includes? (::sut/out r) "</testsuites>")))))
+        (is (cs/includes? (::sut/out r) "</testsuites>")))
+      
+      (testing "returns state"
+        (is (= :test-state (::sut/state r))))))
 
   (testing "begin-test-ns"
     (let [r (sut/update-report {:type :begin-test-ns
@@ -43,29 +48,32 @@
                                          :error 2
                                          :fail 2
                                          :failures [{:message "test message"
-                                                     :details "test description"}]}]}})]
+                                                     :details "test description"}]}]}})
+          out (::sut/out r)]
       
       (testing "writes `<testsuite>` start tag for ns"
-        (is (cs/includes? (::sut/out r) "<testsuite"))
-        (is (cs/includes? (::sut/out r) "package=\"test.ns\"")))
+        (is (= :testsuite (first (keys out))))
+        (is (= {:_attr {:name "test.ns"
+                        :package "test.ns"
+                        :errors 2
+                        :failures 3
+                        :tests 10}}
+               (first (:testsuite out)))))
 
-      (testing "adds succes statistics to tag"
-        (is (cs/includes? (::sut/out r) "tests=\"10\""))
-        (is (cs/includes? (::sut/out r) "errors=\"2\""))
-        (is (cs/includes? (::sut/out r) "failures=\"3\"")))
-
-      (testing "adds `<testcase>` children"
-        (is (cs/includes? (::sut/out r) "<testcase name=\"first\" classname=\"test.ns\">"))
-        (is (cs/includes? (::sut/out r) "<testcase name=\"second\" classname=\"test.ns\">"))
-        (is (cs/includes? (::sut/out r) "<testcase name=\"third\" classname=\"test.ns\">")))
+      (testing "adds `<testcase>` without failures"
+        (is (= {:testcase [{:_attr {:name "first"
+                                    :classname "test.ns"}}]}
+               (-> out :testsuite second))))
 
       (testing "adds `<failure>` tags"
-        (is (cs/includes? (::sut/out r) "<failure message=\"test message\">"))
-        (is (cs/includes? (::sut/out r) "test description")))
+        (is (= {:testcase [{:_attr
+                            {:name "third"
+                             :classname "test.ns"}}
+                           {:failure
+                            {:_attr {:message "test message"}
+                             :_cdata "test description"}}]}
+               (-> out :testsuite (nth 3)))))
       
-      (testing "writes `<testsuite>` end tag"
-        (is (cs/includes? (::sut/out r) "</testsuite>")))
-
       (testing "clears ns from state"
         (is (nil? (-> r ::sut/state :ns))))
 
@@ -167,3 +175,13 @@
             f (-> r ::sut/state :failures first)]
         (is (= "Test error\nExpected: a\nActual: b" (:details f)))
         (is (= "File: test.cljs, line: 100" (:message f)))))))
+
+(deftest xml-test
+  (testing "xml exists"
+    (is (exists? xml)))
+
+  (testing "creates xml from structure"
+    (is (= "<test-tag></test-tag>"
+           (xml (clj->js {:test-tag []}))))
+    (is (= "<head title=\"test head\"/>"
+           (xml (clj->js {:head {:_attr {:title "test head"}}}))))))
