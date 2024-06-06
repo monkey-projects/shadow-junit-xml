@@ -3,7 +3,7 @@
 
  :aliases
  {:test
-  {:extra-deps {com.monkeyprojects/shadow-junit-xml {:mvn/version "0.1.0-SNAPSHOT"}}
+  {:extra-deps {com.monkeyprojects/shadow-junit-xml {:mvn/version "0.1.0"}}
    :extra-paths ["test"]}
 
   :jar

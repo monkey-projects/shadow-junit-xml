@@ -70,13 +70,13 @@
   ;; Register current test var and start time in state
   (update ctx ::state assoc :var var :time (ts)))
 
-(defmethod update-report :end-test-var [{:keys [var time] :as ctx}]
+(defmethod update-report :end-test-var [{:keys [var] :as ctx}]
   (-> ctx
-      (update-state (fn [s]
+      (update-state (fn [{:keys [time] :as s}]
                       (update s :test-cases conj (-> {:name (name (:name (meta var)))
-                                                      :time (- (ts) time)}
+                                                      :time (float (/ (- (ts) time) 1000))}
                                                      (merge (select-keys s [:pass :fail :error :failures]))))))
-      (update-state dissoc :var :pass :fail :error :failures)))
+      (update-state dissoc :var :pass :fail :error :failures :time)))
 
 (defmethod update-report :pass [ctx]
   (update-state ctx update :pass (fnil inc 0)))

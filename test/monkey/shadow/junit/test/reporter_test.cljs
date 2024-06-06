@@ -108,7 +108,8 @@
                                              :pass 2
                                              :fail 1
                                              :error 3
-                                             :failures [:fail]}})]
+                                             :failures [:fail]
+                                             :time 100}})]
       (testing "clears var from state"
         (is (nil? (-> r ::sut/state :var))))
 
@@ -130,8 +131,11 @@
                    (first)
                    (select-keys [:pass :fail :error :failures])))))
 
+      (testing "calculates elapsed time in seconds"
+        (is (number? (-> r ::sut/state :test-cases first :time))))
+
       (testing "resets test statistics"
-        (is (empty? (-> r ::sut/state (select-keys [:pass :fail :error])))))))
+        (is (empty? (-> r ::sut/state (select-keys [:pass :fail :error :time])))))))
 
   (testing "pass"
     (testing "sets pass in state"
