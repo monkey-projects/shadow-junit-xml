@@ -1,12 +1,14 @@
 (ns shadow-junit-xml.build
   (:require [monkey.ci.build.core :as bc]
-            [monkey.ci.plugin.clj :as clj]
+            [monkey.ci.plugin
+             [clj :as clj]
+             [github :as gh]]
             [monkey.ci.ext.junit]))
 
 (def test
   (bc/container-job
    "test"
-   {:image "docker.io/dormeur/clojure-node:1.11.1"
+   {:image "docker.io/monkeyci/clojure-node:1.11.4"
     :script
     ["npm install"
      ;; Run using clojure so we can specify the local mvn repo path
@@ -30,6 +32,10 @@
 (def deploy
   (clj/deps-publish {}))
 
+(def release
+  (gh/release-job {}))
+
 ;; Jobs
 [test
- deploy]
+ deploy
+ release]

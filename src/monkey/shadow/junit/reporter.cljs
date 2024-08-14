@@ -106,7 +106,7 @@
   (handle-error ctx :error))
 
 (defmethod update-report :summary [{:keys [pass fail error test] :as ctx}]
-  (printerr "Test executed:" test "total," pass "passed," fail "failed," error "error(s)")
+  (printerr "Tests executed:" test "tests," pass "assertions passed," fail "failed," error "error(s)")
   ctx)
 
 (def ->xml (comp xml clj->js))
