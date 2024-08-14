@@ -20,6 +20,7 @@
   (junit/reporter state m))
 
 (defmethod ct/report [::junit :end-run-tests] [m]
+  (junit/reporter state m)
   (if (ct/successful? m)
     (js/process.exit 0)
     (js/process.exit 1)))
