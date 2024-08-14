@@ -204,7 +204,3 @@
            (xml (clj->js {:test-tag []}))))
     (is (= "<head title=\"test head\"/>"
            (xml (clj->js {:head {:_attr {:title "test head"}}}))))))
-
-(deftest failing
-  (testing "this test fails"
-    (is (= 1 0))))
