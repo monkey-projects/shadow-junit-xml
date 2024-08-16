@@ -33,7 +33,7 @@
   (clj/deps-publish {}))
 
 (def release
-  (gh/release-job {}))
+  (gh/release-job {:dependencies ["publish"]}))
 
 ;; Jobs
 [test
