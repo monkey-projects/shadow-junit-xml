@@ -1,12 +1,15 @@
 (ns monkey.shadow.junit.runner
+  ;; Recompile every build, or a cached compilation serves a stale registry
+  ;; snapshot and a newly added test namespace does not run.
+  {:dev/always true}
   (:require [cljs.test :as ct]
             [monkey.shadow.junit.reporter :as junit]
             [shadow.test :as st]
-            [shadow.test.node :as stn]))
+            [shadow.test.env :as env]))
 
 ;;; The test runner cannot be tested because the node compilation will get
 ;;; into a waiting loop.  It cannot compile the test because it waits for
-;;; compilation of this namespace, which waits on the `shadow.test.node`
+;;; compilation of this namespace, which waits on the `shadow.test.env`
 ;;; namespace.  So we put the `junit-reporter` in a different ns to break
 ;;; this loop.
 
@@ -42,7 +45,11 @@
     (junit/reporter state m)
     (ct/inc-report-counter! et)))
 
-(defn run-tests [& args]
-  (stn/reset-test-data!)
-  (let [state (atom nil)]
-    (st/run-all-tests (ct/empty-env ::junit) nil)))
+(defn run-tests [& _args]
+  ;; This inlines `shadow.test.node/reset-test-data!`.  `get-test-data` is a
+  ;; macro that snapshots the test registry where it expands, and shadow guards
+  ;; the compile-order race only for the `:main` namespace.  Expanding it there
+  ;; dropped test namespaces that compiled late.
+  (-> (env/get-test-data)
+      (env/reset-test-data!))
+  (st/run-all-tests (ct/empty-env ::junit) nil))
